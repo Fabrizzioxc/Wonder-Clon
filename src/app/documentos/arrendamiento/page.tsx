@@ -54,7 +54,9 @@ export default function ArrendamientoPage() {
                     </div>
                     <div>
                       <h4 className="font-semibold text-slate-800">Elegir este modelo</h4>
-                      <p className="text-sm text-slate-600">Empieza haciendo clic en "Rellenar el modelo"</p>
+                    <p className="text-sm text-slate-600">
+                      Empieza haciendo clic en “Rellenar el modelo”
+                    </p>
                     </div>
                   </div>
 

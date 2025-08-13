@@ -97,7 +97,7 @@ export default function FAQPage() {
               </p>
               <p>
                 Puedes darte de baja de la suscripción en cualquier momento, incluso durante el periodo gratuito de
-                prueba. Basta con hacer clic sobre "Dar de baja" en tu cuenta.
+                prueba. Basta con hacer clic sobre “Dar de baja” en tu cuenta.
               </p>
               <p>Si te das de baja de la suscripción durante el periodo de prueba, aún no habrás pagado nada.</p>
             </div>
