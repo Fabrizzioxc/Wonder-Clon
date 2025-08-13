@@ -127,9 +127,12 @@ export default function ArrendamientoPage() {
                 </div>
               </div>
 
-              <Button className="bg-cyan-500 hover:bg-cyan-600 text-white px-8 py-3 text-lg font-semibold rounded-full">
+              <Link
+                href="/documentos/arrendamiento/contrato-arrendamiento-vivienda-habitual"
+                className="bg-cyan-500 hover:bg-cyan-600 text-white px-8 py-3 text-lg font-semibold rounded-full inline-flex items-center justify-center"
+              >
                 Rellenar el modelo
-              </Button>
+              </Link>
             </div>
 
             {/* Content sections */}
