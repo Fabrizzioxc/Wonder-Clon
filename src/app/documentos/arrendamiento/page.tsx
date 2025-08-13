@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { ChevronRight, Star, FileText, Calendar, FileIcon } from "lucide-react"
 import Link from "next/link"
+import Image from "next/image";
 
 export default function ArrendamientoPage() {
   return (
@@ -34,50 +35,14 @@ export default function ArrendamientoPage() {
           <div className="lg:col-span-1">
             <Card className="bg-white shadow-sm">
               <CardContent className="p-6">
-                <div className="bg-gray-100 rounded-lg p-4 mb-4">
-                  <div className="text-center mb-4">
-                    <h3 className="font-bold text-sm">CONTRATO DE ARRENDAMIENTO DE VIVIENDA</h3>
-                  </div>
-
-                  <div className="space-y-3 text-xs">
-                    <div>
-                      <p>En _______, a _____</p>
-                    </div>
-
-                    <div>
-                      <p className="font-semibold">REUNIDOS</p>
-                    </div>
-
-                    <div>
-                      <p>De una parte,</p>
-                      <p>_______ con DNI/NIF _______ y con domicilio en _______</p>
-                      <p>En adelante, el "Arrendador"</p>
-                    </div>
-
-                    <div>
-                      <p>Y de otra parte,</p>
-                      <p>_______ con DNI/NIF _______ y con domicilio en _______</p>
-                      <p>En adelante, el "Arrendatario"</p>
-                    </div>
-
-                    <div>
-                      <p>
-                        Y que, a continuación, serán referidos, individualmente como la "Parte" y, de forma conjunta,
-                        como las "Partes"...
-                      </p>
-                    </div>
-
-                    <div>
-                      <p className="font-semibold">EXPONEN</p>
-                    </div>
-
-                    <div>
-                      <p>
-                        I. Que el Arrendador es propietario de la vivienda ubicada en: _______ con la siguiente
-                        Referencia Catastral: _______...
-                      </p>
-                    </div>
-                  </div>
+                <div className="bg-white rounded-lg p-4 mb-4">
+                  <Image
+                    src="/img/doc-preview.png"
+                    alt="Vista previa del contrato de arrendamiento"
+                    className="w-full h-auto rounded-lg"
+                    width={400}
+                    height={300}
+                  />
                 </div>
 
                 {/* How it works section */}
