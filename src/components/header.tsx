@@ -15,16 +15,16 @@ export function Header() {
 
           {/* Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
-            <a href="#" className="text-cyan-500 font-medium border-b-2 border-cyan-500 pb-1">
+            <a href="/" className="text-cyan-500 font-medium border-b-2 border-cyan-500 pb-1">
               INICIO
             </a>
-            <a href="#" className="text-slate-600 hover:text-slate-900 font-medium">
+            <a href="/documentos" className="text-slate-600 hover:text-slate-900 font-medium">
               DOCUMENTOS
             </a>
-            <a href="#" className="text-slate-600 hover:text-slate-900 font-medium">
+            <a href="/faq" className="text-slate-600 hover:text-slate-900 font-medium">
               FAQ
             </a>
-            <a href="#" className="text-slate-600 hover:text-slate-900 font-medium">
+            <a href="/mi-cuenta" className="text-slate-600 hover:text-slate-900 font-medium">
               MI CUENTA
             </a>
           </nav>

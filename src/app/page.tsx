@@ -6,7 +6,6 @@ import { BottomSection } from "@/components/bottom-section"
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
       <main>
         <HeroSection />
         <HowItWorksSection />
