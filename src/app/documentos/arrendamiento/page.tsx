@@ -66,9 +66,9 @@ export default function ArrendamientoPage() {
                     </div>
                     <div>
                       <h4 className="font-semibold text-slate-800">Rellenar el documento</h4>
-                      <p className="text-sm text-slate-600">
-                        Contesta a algunas preguntas y tu documento tipo se creará automáticamente.
-                      </p>
+                    <p className="text-sm text-slate-600">
+                      Contesta a algunas preguntas y tu documento tipo se creará automáticamente.
+                    </p>
                     </div>
                   </div>
 
@@ -78,9 +78,21 @@ export default function ArrendamientoPage() {
                     </div>
                     <div>
                       <h4 className="font-semibold text-slate-800">Guardar - Imprimir</h4>
-                      <p className="text-sm text-slate-600">
-                        ¡Tu documento está ya listo! Lo recibirás en los formatos Word y PDF.
-                      </p>
+                    <p className="text-sm text-slate-600">
+                      ¡Tu documento está ya listo! Lo recibirás en los formatos Word y PDF. Lo podrás modificar.
+                    </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start space-x-3">
+                    <div className="bg-slate-800 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold">
+                      4
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-slate-800">Consultar a un abogado</h4>
+                    <p className="text-sm text-slate-600">
+                      Puedes optar por recurrir a los servicios de un abogado después de haber rellenado el documento.
+                    </p>
                     </div>
                   </div>
                 </div>
