@@ -1,5 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card"
-import { ChevronRight, Star, FileText, Calendar, FileIcon } from "lucide-react"
+import { ChevronRight, Star, FileText, Calendar, File } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image";
 
@@ -102,7 +102,7 @@ export default function ArrendamientoPage() {
                 </div>
 
                 <div className="flex items-center space-x-2">
-                  <FileIcon className="h-4 w-4 text-slate-500" />
+                  <File className="h-4 w-4 text-slate-500" />
                   <span className="text-sm text-slate-600">
                     <strong>Formatos</strong>
                     <br />
