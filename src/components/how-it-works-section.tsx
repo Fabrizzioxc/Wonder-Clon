@@ -1,3 +1,5 @@
+import Image from "next/image"
+
 export function HowItWorksSection() {
   return (
     <section className="py-16 bg-white">
@@ -6,10 +8,12 @@ export function HowItWorksSection() {
           {/* Left side - Illustration */}
           <div className="flex justify-center">
             <div className="relative">
-              <img
+              <Image
                 src="/img/home-hero.webp"
                 alt="Documento legal con pluma y firma"
                 className="w-full max-w-md"
+                width={400}
+                height={300}
               />
             </div>
           </div>
