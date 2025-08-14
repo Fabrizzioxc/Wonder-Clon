@@ -362,7 +362,7 @@ export default function ContractFormPage() {
 
   const getContractPreview = () => {
     const currentValue = contractData[currentQuestion.id as keyof ContractData]
-    const highlightedText = currentValue || "esto es una prueba de la direccion de la vivien"
+    const highlightedText = currentValue || "___________________________________"
 
     return `CONTRATO DE ARRENDAMIENTO DE VIVIENDA
 
