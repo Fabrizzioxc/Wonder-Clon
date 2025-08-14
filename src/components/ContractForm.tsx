@@ -1,28 +1,92 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent } from "@/components/ui/card"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import Link from "next/link"
 
-// Importar los módulos creados
-import { ContractData, Question } from '@/types/type'
-import { questions } from '@/types/contractQuestions'
-import { FormField } from './FormField'
-import { ContractPreview } from './ContractPreview'
-import { ProgressBar } from './ProgressBar'
+import { ContractData, Question } from "@/types/type"
+import { questions as baseQuestions } from "@/types/contractQuestions"
+import { FormField } from "./FormField"
+import { ContractPreview } from "./ContractPreview"
+import { ProgressBar } from "./ProgressBar"
 
-// Datos iniciales vacíos
+// ---------------- Utils ----------------
+const toInt = (v: string, d = 1) => {
+  const n = parseInt(v, 10)
+  return Number.isFinite(n) ? n : d
+}
+
+function makeCoTenantQuestions(idx: 2 | 3): Question[] {
+  return [
+    {
+      id: (`coTenant${idx}Name` as keyof ContractData),
+      label: `Nombre completo del co-arrendatario ${idx}:`,
+      type: "text",
+      placeholder: "Nombre y apellidos / Razón social",
+    },
+    {
+      id: (`coTenant${idx}Type` as keyof ContractData),
+      label: `Tipo de co-arrendatario ${idx}:`,
+      type: "select",
+      options: [
+        { value: "fisica", label: "Persona física" },
+        { value: "juridica", label: "Persona jurídica" },
+      ],
+    },
+    {
+      id: (`coTenant${idx}IdType` as keyof ContractData),
+      label: `Tipo de documento del co-arrendatario ${idx}:`,
+      type: "select",
+      options: [
+        { value: "dni", label: "DNI" },
+        { value: "nie", label: "NIE" },
+        { value: "pasaporte", label: "Pasaporte" },
+      ],
+    },
+    {
+      id: (`coTenant${idx}Id` as keyof ContractData),
+      label: `Nº de documento del co-arrendatario ${idx}:`,
+      type: "text",
+      placeholder: idx === 2 ? "12345678A" : "87654321B",
+    },
+  ]
+}
+
+/**
+ * Inserta preguntas de co-arrendatarios inmediatamente después del paso "numTenants".
+ */
+function useRuntimeQuestions(data: ContractData) {
+  return useMemo<Question[]>(() => {
+    const cloned = [...baseQuestions]
+    const idx = cloned.findIndex(q => q.id === "numTenants")
+    if (idx === -1) return cloned
+
+    const n = Math.max(1, toInt(data.numTenants || "1"))
+    const inserts: Question[] = []
+    if (n >= 2) inserts.push(...makeCoTenantQuestions(2))
+    if (n >= 3) inserts.push(...makeCoTenantQuestions(3))
+
+    return [...cloned.slice(0, idx + 1), ...inserts, ...cloned.slice(idx + 1)]
+  }, [baseQuestions, data.numTenants])
+}
+
+// ---------------- Estado inicial ----------------
 const initialContractData: ContractData = {
+  // Inmueble
   propertyAddress: "",
   propertySize: "",
   propertyDescription: "",
   furnished: "",
   propertyReference: "",
+
+  // Duración / Fechas
   contractDuration: "",
   availabilityDate: "",
+
+  // Económico
   monthlyRent: "",
   paymentMethod: "",
   bankName: "",
@@ -32,8 +96,12 @@ const initialContractData: ContractData = {
   additionalDeposit: "",
   hasGuarantors: "",
   petsAllowed: "",
+
+  // Encabezado
   contractLocation: "",
   contractDate: "",
+
+  // Arrendador
   numLandlords: "",
   landlordType: "",
   landlordName: "",
@@ -42,30 +110,76 @@ const initialContractData: ContractData = {
   landlordAddress: "",
   landlordSigner: "",
   landlordEmail: "",
-  numTenants: "",
+
+  // Arrendatarios
+  numTenants: "1",          // por defecto 1
   tenantType: "",
   tenantName: "",
   tenantIdType: "",
   tenantId: "",
   tenantSigner: "",
   tenantEmail: "",
+
+  // Co-arrendatarios (opcionales)
+  coTenant2Name: "",
+  coTenant2Type: "fisica",
+  coTenant2IdType: "dni",
+  coTenant2Id: "",
+  coTenant3Name: "",
+  coTenant3Type: "fisica",
+  coTenant3IdType: "dni",
+  coTenant3Id: "",
 }
 
 export default function ContractForm() {
   const [currentStep, setCurrentStep] = useState(0)
   const [contractData, setContractData] = useState<ContractData>(initialContractData)
 
-  const currentQuestion = questions[currentStep]
+  // Construye la lista de pasos a partir de las preguntas base + co-arrendatarios
+  const runtimeQuestions = useRuntimeQuestions(contractData)
+
+  // Si al cambiar numTenants se reduce el total de pasos, ajusta el índice
+  useEffect(() => {
+    if (currentStep > runtimeQuestions.length - 1) {
+      setCurrentStep(runtimeQuestions.length - 1)
+    }
+  }, [runtimeQuestions.length, currentStep])
+
+  // Limpia campos de co-arrendatarios si baja la cantidad
+  useEffect(() => {
+    const n = Math.max(1, toInt(contractData.numTenants || "1"))
+    setContractData(prev => {
+      const next = { ...prev }
+      let changed = false
+      if (n < 2) {
+        if (next.coTenant2Name || next.coTenant2Id) changed = true
+        next.coTenant2Name = ""
+        next.coTenant2Type = "fisica"
+        next.coTenant2IdType = "dni"
+        next.coTenant2Id = ""
+      }
+      if (n < 3) {
+        if (next.coTenant3Name || next.coTenant3Id) changed = true
+        next.coTenant3Name = ""
+        next.coTenant3Type = "fisica"
+        next.coTenant3IdType = "dni"
+        next.coTenant3Id = ""
+      }
+      return changed ? next : prev
+    })
+  }, [contractData.numTenants])
+
+  const currentQuestion = runtimeQuestions[currentStep]
 
   const handleInputChange = (value: string) => {
-    setContractData((prev) => ({
+    setContractData(prev => ({
       ...prev,
       [currentQuestion.id]: value,
     }))
   }
 
   const handleNext = () => {
-    if (currentStep < questions.length - 1) {
+    if (currentStep < runtimeQuestions.length - 1) {
       setCurrentStep(currentStep + 1)
     }
   }
@@ -102,7 +216,7 @@ export default function ContractForm() {
                     <div className="mt-2">
                       <FormField
                         question={currentQuestion}
-                        value={contractData[currentQuestion.id]}
+                        value={contractData[currentQuestion.id] as string}
                         onChange={handleInputChange}
                       />
                     </div>
@@ -120,9 +234,9 @@ export default function ContractForm() {
                       <span>Anterior</span>
                     </Button>
 
-                    {currentStep === questions.length - 1 ? (
-                      <Button 
-                        onClick={handleExportPDF} 
+                    {currentStep === runtimeQuestions.length - 1 ? (
+                      <Button
+                        onClick={handleExportPDF}
                         className="bg-cyan-500 hover:bg-cyan-600 text-white"
                       >
                         Exportar a PDF
@@ -157,7 +271,7 @@ export default function ContractForm() {
           <div className="col-span-12 lg:col-span-6">
             <Card className="bg-white shadow-sm">
               <CardContent className="p-6">
-                <ContractPreview 
+                <ContractPreview
                   contractData={contractData}
                   currentFieldId={currentQuestion.id}
                 />
@@ -167,9 +281,9 @@ export default function ContractForm() {
 
           {/* Columna Derecha - Barra de Progreso */}
           <div className="col-span-12 lg:col-span-2">
-            <ProgressBar 
+            <ProgressBar
               currentStep={currentStep}
-              totalSteps={questions.length}
+              totalSteps={runtimeQuestions.length}
             />
           </div>
         </div>

@@ -1,11 +1,16 @@
 export interface ContractData {
+  // Inmueble
   propertyAddress: string
   propertySize: string
   propertyDescription: string
   furnished: string
   propertyReference: string
+
+  // Duración / Fechas
   contractDuration: string
   availabilityDate: string
+
+  // Económico
   monthlyRent: string
   paymentMethod: string
   bankName: string
@@ -15,23 +20,40 @@ export interface ContractData {
   additionalDeposit: string
   hasGuarantors: string
   petsAllowed: string
+
+  // Encabezado
   contractLocation: string
   contractDate: string
+
+  // Arrendador
   numLandlords: string
-  landlordType: string
+  landlordType: string                // "fisica" | "juridica"
   landlordName: string
-  landlordIdType: string
+  landlordIdType: string              // "dni" | "nie" | "pasaporte"
   landlordId: string
   landlordAddress: string
-  landlordSigner: string
+  landlordSigner: string              // "arrendador" | "representante"
   landlordEmail: string
-  numTenants: string
-  tenantType: string
+
+  // Arrendatarios
+  numTenants: string                  // "1" | "2" | "3"
+  tenantType: string                  // "fisica" | "juridica"
   tenantName: string
-  tenantIdType: string
+  tenantIdType: string                // "dni" | "nie" | "pasaporte"
   tenantId: string
-  tenantSigner: string
+  tenantSigner: string                // "arrendatario" | "representante"
   tenantEmail: string
+
+  // Co-arrendatarios opcionales (aparecen si numTenants = 2 ó 3)
+  coTenant2Name?: string
+  coTenant2Type?: "fisica" | "juridica"
+  coTenant2IdType?: "dni" | "nie" | "pasaporte"
+  coTenant2Id?: string
+
+  coTenant3Name?: string
+  coTenant3Type?: "fisica" | "juridica"
+  coTenant3IdType?: "dni" | "nie" | "pasaporte"
+  coTenant3Id?: string
 }
 
 export interface Question {
