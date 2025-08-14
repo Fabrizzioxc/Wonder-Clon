@@ -14,6 +14,7 @@ export function HowItWorksSection() {
                 className="w-full max-w-md"
                 width={400}
                 height={300}
+                priority={true}
               />
             </div>
           </div>
