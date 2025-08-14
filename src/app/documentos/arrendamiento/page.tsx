@@ -41,6 +41,7 @@ export default function ArrendamientoPage() {
                     className="w-full h-auto rounded-lg"
                     width={400}
                     height={300}
+                    priority={true}
                   />
                 </div>
 
