@@ -97,6 +97,7 @@ Titular de la cuenta: {{accountHolder}}`
     
     // Dividir el texto en líneas para procesamiento
     const lines = template.split('\n')
+    let globalFieldCounter = 0 // Contador global para hacer keys únicos
     
     return (
       <div>
@@ -114,6 +115,8 @@ Titular de la cuenta: {{accountHolder}}`
             const placeholder = match[0]
             const startIndex = match.index
             const endIndex = match.index + placeholder.length
+            
+            globalFieldCounter++ // Incrementar contador para key único
 
             // Agregar texto antes del placeholder
             if (startIndex > lastIndex) {
@@ -133,8 +136,8 @@ Titular de la cuenta: {{accountHolder}}`
             // Agregar el valor del campo con resaltado condicional
             elements.push(
               <span
-                key={`field-${lineIndex}-${fieldId}`}
-                id={`field-${fieldId}`}
+                key={`field-${globalFieldCounter}-${fieldId}-${lineIndex}`}
+                id={`field-${fieldId}-${globalFieldCounter}`}
                 className={isCurrentField ? "bg-yellow-200 px-1 rounded" : ""}
               >
                 {currentValue}
@@ -166,7 +169,8 @@ Titular de la cuenta: {{accountHolder}}`
   // Auto-scroll al campo actual cuando cambia
   useEffect(() => {
     if (currentFieldId && contractData[currentFieldId]) {
-      const fieldElement = document.getElementById(`field-${currentFieldId}`)
+      // Buscar el primer elemento con este fieldId
+      const fieldElement = document.querySelector(`[id^="field-${currentFieldId}-"]`)
       if (fieldElement && previewRef.current) {
         // Scroll del contenedor de la vista previa
         const containerRect = previewRef.current.getBoundingClientRect()
