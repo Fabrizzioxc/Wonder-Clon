@@ -1,4 +1,3 @@
-// src/components/ContractPreview.tsx
 "use client"
 
 import React, { useEffect, useMemo, useRef } from "react"
@@ -22,7 +21,7 @@ function formatFechaES(input?: string): string {
     const [, dd, mm, yy] = input.match(eu)!
     d = parseInt(dd, 10); m = parseInt(mm, 10) - 1; y = parseInt(yy, 10)
   } else {
-    return input // ya viene “bonito”
+    return input
   }
   const mes = MESES[m] ?? ""
   return `${d} de ${mes} de ${y}`
@@ -54,7 +53,7 @@ const SCROLL_ANCHORS: Record<string, string> = {
   petsAllowed: "BLOQUE_MASCOTAS",
   additionalDeposit: "BLOQUE_DEPOSITO_ADICIONAL",
   hasGuarantors: "BLOQUE_AVALISTAS",
-  // Identidad/representación de partes (scroll al párrafo completo)
+  // Identidad/representación de partes
   landlordIdType: "BLOQUE_PARTE_ARRENDADOR",
   landlordType: "BLOQUE_PARTE_ARRENDADOR",
   landlordSigner: "BLOQUE_PARTE_ARRENDADOR",
@@ -66,8 +65,16 @@ const SCROLL_ANCHORS: Record<string, string> = {
   tenantSigner: "BLOQUE_PARTE_ARRENDATARIO",
   tenantName: "BLOQUE_PARTE_ARRENDATARIO",
   tenantId: "BLOQUE_PARTE_ARRENDATARIO",
-  // Nº de arrendatarios → lista + cláusula
+  // Nº de arrendatarios
   numTenants: "CLAUSULA_SOLIDARIDAD",
+  coTenant2Name: "BLOQUE_COTENANTS",
+  coTenant2Type: "BLOQUE_COTENANTS",
+  coTenant2IdType: "BLOQUE_COTENANTS",
+  coTenant2Id: "BLOQUE_COTENANTS",
+  coTenant3Name: "BLOQUE_COTENANTS",
+  coTenant3Type: "BLOQUE_COTENANTS",
+  coTenant3IdType: "BLOQUE_COTENANTS",
+  coTenant3Id: "BLOQUE_COTENANTS",
   // Fechas/locación
   contractLocation: "contractLocation",
   contractDate: "contractDate",
@@ -211,14 +218,13 @@ function getDefaultValues(): Partial<ContractData> {
     tenantSigner: "arrendatario",
     landlordType: "fisica",
     tenantType: "fisica",
-  } as any
+  }
 }
 
 // ------------- Bloques dinámicos -------------
-function buildBlocks(data: ContractData & Partial<ContractData>) {
+function buildBlocks(data: Partial<ContractData>) {
   const nTenants = Math.max(1, parseInt(String(data.numTenants || "1"), 10) || 1)
 
-  // Frases de documento según tipo (física) o NIF (jurídica)
   const docPhrase = (type?: string, idType?: string, id?: string) =>
     type === "juridica"
       ? `identificada con NIF ${fallback(id)}`
@@ -228,7 +234,6 @@ function buildBlocks(data: ContractData & Partial<ContractData>) {
       ? `identificado con Pasaporte nº ${fallback(id)}`
       : `identificado con DNI nº ${fallback(id)}`
 
-  // Representación (arrendador/arrendatario principal)
   const repLandlord =
     data.landlordSigner === "representante"
       ? ` Interviene un representante del Arrendador, manifestando contar con poder suficiente y vigente para este acto.`
@@ -239,7 +244,6 @@ function buildBlocks(data: ContractData & Partial<ContractData>) {
       ? ` Interviene un representante del Arrendatario, manifestando contar con poder suficiente y vigente para este acto.`
       : ``
 
-  // Párrafo del ARRENDADOR
   const BLOQUE_PARTE_ARRENDADOR =
     data.landlordType === "juridica"
       ? `La sociedad ${fallback(data.landlordName)}, ${docPhrase(data.landlordType, data.landlordIdType, data.landlordId)}, con domicilio social en ${fallback(data.landlordAddress)}.${repLandlord}
@@ -247,7 +251,6 @@ En adelante, el "Arrendador".`
       : `${fallback(data.landlordName)}, ${docPhrase(data.landlordType, data.landlordIdType, data.landlordId)}, con domicilio en: ${fallback(data.landlordAddress)}.${repLandlord}
 En adelante, el "Arrendador".`
 
-  // Párrafo del ARRENDATARIO principal (plurales si corresponde)
   const arrLbl = nTenants > 1 ? 'los "Arrendatarios"' : 'el "Arrendatario"'
   const BLOQUE_PARTE_ARRENDATARIO =
     data.tenantType === "juridica"
@@ -256,64 +259,51 @@ En adelante, ${arrLbl}.`
       : `${fallback(data.tenantName)}, ${docPhrase(data.tenantType, data.tenantIdType, data.tenantId)}, con domicilio en: ${fallback(data.propertyAddress)}.${repTenant}
 En adelante, ${arrLbl}.`
 
-  // Co-arrendatarios (2 y 3) — si hay 2 o 3, listar
+  // Co-arrendatarios (2 y 3)
   const coList: string[] = []
   if (nTenants >= 2) {
-    const name = (data as any).coTenant2Name
-    const type = (data as any).coTenant2Type || "fisica"
-    const idType = (data as any).coTenant2IdType || "dni"
-    const id = (data as any).coTenant2Id
     const p =
-      type === "juridica"
-        ? `La sociedad ${fallback(name)}, ${docPhrase(type, idType, id)}, con domicilio social en ${fallback(data.propertyAddress)}.`
-        : `${fallback(name)}, ${docPhrase(type, idType, id)}, con domicilio en: ${fallback(data.propertyAddress)}.`
+      (data.coTenant2Type === "juridica")
+        ? `La sociedad ${fallback(data.coTenant2Name)}, ${docPhrase(data.coTenant2Type, data.coTenant2IdType, data.coTenant2Id)}, con domicilio social en ${fallback(data.propertyAddress)}.`
+        : `${fallback(data.coTenant2Name)}, ${docPhrase(data.coTenant2Type, data.coTenant2IdType, data.coTenant2Id)}, con domicilio en: ${fallback(data.propertyAddress)}.`
     coList.push(p)
   }
   if (nTenants >= 3) {
-    const name = (data as any).coTenant3Name
-    const type = (data as any).coTenant3Type || "fisica"
-    const idType = (data as any).coTenant3IdType || "dni"
-    const id = (data as any).coTenant3Id
     const p =
-      type === "juridica"
-        ? `La sociedad ${fallback(name)}, ${docPhrase(type, idType, id)}, con domicilio social en ${fallback(data.propertyAddress)}.`
-        : `${fallback(name)}, ${docPhrase(type, idType, id)}, con domicilio en: ${fallback(data.propertyAddress)}.`
+      (data.coTenant3Type === "juridica")
+        ? `La sociedad ${fallback(data.coTenant3Name)}, ${docPhrase(data.coTenant3Type, data.coTenant3IdType, data.coTenant3Id)}, con domicilio social en ${fallback(data.propertyAddress)}.`
+        : `${fallback(data.coTenant3Name)}, ${docPhrase(data.coTenant3Type, data.coTenant3IdType, data.coTenant3Id)}, con domicilio en: ${fallback(data.propertyAddress)}.`
     coList.push(p)
   }
   const BLOQUE_COTENANTS = coList.length ? coList.join("\n") + "\n" : ""
 
-  // Cláusula completa de mobiliario
+  // Cláusulas condicionales
   const CLAUSULA_MOBILIARIO =
     data.furnished === "si"
       ? `La Vivienda se entrega amueblada y equipada conforme al inventario que se adjunta como Anexo I.
 El/Los Arrendatario(s) declara(n) haberlo recibido en correcto estado de uso y conservación y se obliga(n) a mantenerlo, no sustraerlo ni sustituirlo sin autorización del Arrendador, y a devolverlo al finalizar el contrato en idéntico estado, salvo el desgaste por el uso ordinario. Cualquier falta, rotura o deterioro imputable al/los Arrendatario(s) será reparado o repuesto por este/estos; en caso contrario, el Arrendador podrá detraer su importe de la fianza legal y, en su caso, del depósito adicional, sin perjuicio de reclamar cantidades superiores si procediera.`
       : `La Vivienda se entrega sin amueblar. El/Los Arrendatario(s) podrá(n) introducir su propio mobiliario bajo su exclusiva responsabilidad, comprometiéndose a retirarlo al término del arrendamiento y a devolver la Vivienda en el mismo estado en que la recibió/recibieron, salvo el desgaste por el uso ordinario. Los daños causados en elementos preexistentes de la Vivienda serán reparados por el/los Arrendatario(s); en caso de incumplimiento, podrán ser compensados con cargo a la fianza legal y, en su caso, al depósito adicional.`
 
-  // Suministros
   const BLOQUE_SUMINISTROS =
     data.includesUtilities === "si"
       ? `Los gastos de suministros (luz, agua, gas y tasas) se consideran incluidos en la renta y serán asumidos por el Arrendador.`
       : `Los gastos de suministros individualizados (luz, agua, gas) y cualesquiera tasas repercutibles serán por cuenta del/los Arrendatario(s).`
 
-  // Mascotas
   const BLOQUE_MASCOTAS =
     data.petsAllowed === "si"
       ? `Se permite la tenencia de mascotas, siendo el/los Arrendatario(s) responsable(s) de los posibles daños y de cumplir las normas de la comunidad.`
       : `Queda prohibida la tenencia de mascotas en la vivienda.`
 
-  // Depósito adicional
   const BLOQUE_DEPOSITO_ADICIONAL =
     data.additionalDeposit === "si"
       ? `Además de la fianza legal, el/los Arrendatario(s) entrega(n) un depósito adicional por importe de __________ € para garantizar el cumplimiento de sus obligaciones, que será devuelto una vez verificado el estado del inmueble.`
       : ``
 
-  // Avalistas
   const BLOQUE_AVALISTAS =
     data.hasGuarantors === "si"
       ? `El contrato cuenta con avalista(s): __________, con documento nº __________ y domicilio en __________, que responden solidariamente de las obligaciones del/los Arrendatario(s).`
       : ``
 
-  // Solidaridad (solo si hay 2+)
   const CLAUSULA_SOLIDARIDAD =
     nTenants > 1
       ? `Los Arrendatarios asumen frente al Arrendador el cumplimiento de todas las obligaciones derivadas del presente contrato de forma solidaria, de modo que cualquiera de ellos podrá ser requerido por la totalidad de las cantidades debidas o por la ejecución de las obligaciones pendientes.
@@ -333,7 +323,9 @@ Las comunicaciones y notificaciones que el Arrendador dirija al domicilio de la 
   }
 }
 
-// ------------- Props -------------
+// ------------- Types internos -------------
+type ValuesMap = Record<string, string>
+
 interface ContractPreviewProps {
   contractData: ContractData
   currentFieldId: keyof ContractData
@@ -343,8 +335,8 @@ interface ContractPreviewProps {
 export function ContractPreview({ contractData, currentFieldId }: ContractPreviewProps) {
   const previewRef = useRef<HTMLDivElement>(null)
 
-  // Merge + normalizaciones + bloques
-  const values = useMemo(() => {
+  // Merge + normalizaciones + bloques (tipado fuerte)
+  const values: ValuesMap = useMemo(() => {
     const def = getDefaultValues()
     const contractDate = formatFechaES(contractData.contractDate || def.contractDate)
     const availabilityDate = formatFechaES(contractData.availabilityDate || def.availabilityDate)
@@ -353,8 +345,8 @@ export function ContractPreview({ contractData, currentFieldId }: ContractPrevie
     const blocks = buildBlocks({ ...def, ...contractData })
 
     return {
-      ...def,
-      ...contractData,
+      ...Object.fromEntries(Object.entries(def).map(([k, v]) => [k, String(v ?? "")])),
+      ...Object.fromEntries(Object.entries(contractData).map(([k, v]) => [k, String(v ?? "")])),
       contractDate,
       availabilityDate,
       monthlyRent,
@@ -385,7 +377,7 @@ export function ContractPreview({ contractData, currentFieldId }: ContractPrevie
           let match: RegExpExecArray | null
 
           while ((match = placeholderRegex.exec(line)) !== null) {
-            const key = match[1] as keyof typeof values
+            const key = match[1] // string
             const placeholder = match[0]
             const start = match.index
             const end = start + placeholder.length
@@ -395,14 +387,14 @@ export function ContractPreview({ contractData, currentFieldId }: ContractPrevie
             }
 
             globalFieldCounter++
-            const currentValue = (values[key] as unknown as string) ?? ""
+            const currentValue = values[key] ?? ""
             const isCurrentField =
-              (key === currentFieldId || key === (anchorKey as any)) && Boolean(values[key])
+              (key === String(currentFieldId) || key === anchorKey) && Boolean(values[key])
 
             elements.push(
               <span
-                key={`f-${globalFieldCounter}-${String(key)}-${lineIndex}`}
-                id={`field-${String(key)}-${globalFieldCounter}`}
+                key={`f-${globalFieldCounter}-${key}-${lineIndex}`}
+                id={`field-${key}-${globalFieldCounter}`}
                 className={isCurrentField ? "bg-yellow-200 px-1 rounded" : ""}
               >
                 {currentValue || "__________"}
@@ -424,13 +416,14 @@ export function ContractPreview({ contractData, currentFieldId }: ContractPrevie
 
   // Auto-scroll al bloque ancla (o al campo si existe como token)
   useEffect(() => {
-    if (anchorKey && (values as any)[anchorKey]) {
-      let fieldElement =
-        document.querySelector(`[id^="field-${String(anchorKey)}-"]`) ||
-        document.querySelector(`[id^="field-${String(currentFieldId)}-"]`)
-      if (fieldElement && previewRef.current) {
+    if (anchorKey && values[anchorKey] && previewRef.current) {
+      const el =
+        (previewRef.current.querySelector(`[id^="field-${String(anchorKey)}-"]`) as HTMLElement | null) ||
+        (previewRef.current.querySelector(`[id^="field-${String(currentFieldId)}-"]`) as HTMLElement | null)
+
+      if (el) {
         const containerRect = previewRef.current.getBoundingClientRect()
-        const fieldRect = (fieldElement as HTMLElement).getBoundingClientRect()
+        const fieldRect = el.getBoundingClientRect()
         const relativeTop = fieldRect.top - containerRect.top + previewRef.current.scrollTop
         previewRef.current.scrollTo({ top: relativeTop - 100, behavior: "smooth" })
       }
@@ -440,7 +433,7 @@ export function ContractPreview({ contractData, currentFieldId }: ContractPrevie
   return (
     <div
       ref={previewRef}
-      className="bg-gray-50 rounded-lg p-6 text-sm leading-relaxed font-mono select-none max-h=[600px] overflow-y-auto"
+      className="bg-gray-50 rounded-lg p-6 text-sm leading-relaxed font-mono select-none max-h-[600px] overflow-y-auto"
       style={{ userSelect: "none" }}
     >
       <div className="whitespace-pre-line">{processed}</div>

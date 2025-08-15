@@ -55,9 +55,7 @@ function makeCoTenantQuestions(idx: 2 | 3): Question[] {
   ]
 }
 
-/**
- * Inserta preguntas de co-arrendatarios inmediatamente después del paso "numTenants".
- */
+/** Inserta preguntas de co-arrendatarios inmediatamente después del paso "numTenants". */
 function useRuntimeQuestions(data: ContractData) {
   return useMemo<Question[]>(() => {
     const cloned = [...baseQuestions]
@@ -70,7 +68,8 @@ function useRuntimeQuestions(data: ContractData) {
     if (n >= 3) inserts.push(...makeCoTenantQuestions(3))
 
     return [...cloned.slice(0, idx + 1), ...inserts, ...cloned.slice(idx + 1)]
-  }, [baseQuestions, data.numTenants])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data.numTenants]) // << quitar baseQuestions del array para evitar el warning
 }
 
 // ---------------- Estado inicial ----------------
@@ -112,7 +111,7 @@ const initialContractData: ContractData = {
   landlordEmail: "",
 
   // Arrendatarios
-  numTenants: "1",          // por defecto 1
+  numTenants: "1",
   tenantType: "",
   tenantName: "",
   tenantIdType: "",
@@ -120,7 +119,7 @@ const initialContractData: ContractData = {
   tenantSigner: "",
   tenantEmail: "",
 
-  // Co-arrendatarios (opcionales)
+  // Co-arrendatarios opcionales
   coTenant2Name: "",
   coTenant2Type: "fisica",
   coTenant2IdType: "dni",
@@ -135,17 +134,16 @@ export default function ContractForm() {
   const [currentStep, setCurrentStep] = useState(0)
   const [contractData, setContractData] = useState<ContractData>(initialContractData)
 
-  // Construye la lista de pasos a partir de las preguntas base + co-arrendatarios
   const runtimeQuestions = useRuntimeQuestions(contractData)
 
-  // Si al cambiar numTenants se reduce el total de pasos, ajusta el índice
+  // Ajustar índice si cambia la cantidad de pasos
   useEffect(() => {
     if (currentStep > runtimeQuestions.length - 1) {
       setCurrentStep(runtimeQuestions.length - 1)
     }
   }, [runtimeQuestions.length, currentStep])
 
-  // Limpia campos de co-arrendatarios si baja la cantidad
+  // Limpiar co-arrendatarios al bajar el número
   useEffect(() => {
     const n = Math.max(1, toInt(contractData.numTenants || "1"))
     setContractData(prev => {
