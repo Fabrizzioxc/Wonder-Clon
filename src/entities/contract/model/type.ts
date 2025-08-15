@@ -1,47 +1,49 @@
+// src/entities/contract/model/type.ts
+
 export interface ContractData {
   // Inmueble
   propertyAddress: string
   propertySize: string
   propertyDescription: string
-  furnished: string
+  furnished: string                // valores esperados: "si" | "no"
   propertyReference: string
 
   // Duración / Fechas
   contractDuration: string
-  availabilityDate: string
+  availabilityDate: string         // "YYYY-MM-DD" o "dd/mm/aaaa"
 
   // Económico
   monthlyRent: string
-  paymentMethod: string
+  paymentMethod: string            // "transferencia" | "domiciliacion" | "efectivo"
   bankName: string
   bankIban: string
   accountHolder: string
-  includesUtilities: string
-  additionalDeposit: string
-  hasGuarantors: string
-  petsAllowed: string
+  includesUtilities: string        // "si" | "no"
+  additionalDeposit: string        // "si" | "no"
+  hasGuarantors: string            // "si" | "no"
+  petsAllowed: string              // "si" | "no"
 
   // Encabezado
   contractLocation: string
-  contractDate: string
+  contractDate: string             // "YYYY-MM-DD" o "dd/mm/aaaa"
 
   // Arrendador
-  numLandlords: string
-  landlordType: string                // "fisica" | "juridica"
+  numLandlords: string             // "1" | "2" | ...
+  landlordType: string             // "fisica" | "juridica"
   landlordName: string
-  landlordIdType: string              // "dni" | "nie" | "pasaporte"
+  landlordIdType: string           // "dni" | "nie" | "pasaporte"
   landlordId: string
   landlordAddress: string
-  landlordSigner: string              // "arrendador" | "representante"
+  landlordSigner: string           // "arrendador" | "representante"
   landlordEmail: string
 
   // Arrendatarios
-  numTenants: string                  // "1" | "2" | "3"
-  tenantType: string                  // "fisica" | "juridica"
+  numTenants: string               // "1" | "2" | "3"
+  tenantType: string               // "fisica" | "juridica"
   tenantName: string
-  tenantIdType: string                // "dni" | "nie" | "pasaporte"
+  tenantIdType: string             // "dni" | "nie" | "pasaporte"
   tenantId: string
-  tenantSigner: string                // "arrendatario" | "representante"
+  tenantSigner: string             // "arrendatario" | "representante"
   tenantEmail: string
 
   // Co-arrendatarios opcionales (aparecen si numTenants = 2 ó 3)

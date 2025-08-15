@@ -471,6 +471,9 @@ export function ContractPreview({ contractData, currentFieldId }: ContractPrevie
     }
   }, [anchorKey, currentFieldId, values])
 
+
+  
+
   return (
     <div
       ref={previewRef}
@@ -480,4 +483,88 @@ export function ContractPreview({ contractData, currentFieldId }: ContractPrevie
       <div className="whitespace-pre-line">{processed}</div>
     </div>
   )
+}
+
+// === EXPORT: construir el HTML final descargable (sin resaltados) ===
+
+// Reusa helpers locales
+function buildValuesForExport(contractData: ContractData): Record<string, string> {
+  const def = getDefaultValues()
+  const contractDate = formatFechaES(contractData.contractDate || def.contractDate)
+  const availabilityDate = formatFechaES(contractData.availabilityDate || def.availabilityDate)
+  const monthlyRent = formatEuros(contractData.monthlyRent || def.monthlyRent)
+  const paymentMethod = labelPago(contractData.paymentMethod || def.paymentMethod)
+  const blocks = buildBlocks({ ...def, ...contractData })
+
+  return {
+    ...Object.fromEntries(Object.entries(def).map(([k, v]) => [k, String(v ?? "")])),
+    ...Object.fromEntries(Object.entries(contractData).map(([k, v]) => [k, String(v ?? "")])),
+    contractDate,
+    availabilityDate,
+    monthlyRent,
+    paymentMethod,
+    ...blocks,
+  }
+}
+
+function renderTemplateToCleanHtml(template: string, values: Record<string, string>): string {
+  // Interpretamos directivas de línea y sustituimos tokens sin spans/clases de resaltado.
+  const lines = template.split("\n")
+  const htmlLines: string[] = []
+
+  for (const raw of lines) {
+    // Reutilizamos el parser de directivas del archivo
+    const { text, className } = parseLineDirectives(raw)
+
+    // Mapeo de clases Tailwind a clases serializadas simples para el HTML exportado
+    const cls = className
+      .replace("text-center", "x-center")
+      .replace("text-right", "x-right")
+      .replace("font-bold", "x-bold")
+      .replace("uppercase", "x-up")
+      .replace("mt-6", "x-mt")
+      .replace("mt-4", "x-mt")
+      .replace("mb-2", "x-mb")
+      .replace("mb-1", "x-mb")
+
+    const replaced = text.replace(/\{\{(\w+)\}\}/g, (_m, k) =>
+      k in values ? String(values[k]) : "__________"
+    )
+
+    // Conservamos líneas en blanco para mantener espaciados
+    const safe = replaced.length ? replaced : "&nbsp;"
+    htmlLines.push(`<div class="${cls}">${safe}</div>`)
+  }
+
+  // CSS mínimo embebido (sin Tailwind)
+  const css = `
+  body{font-family: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif; font-size:15px; line-height:1.7; padding:32px;}
+  .x-center{text-align:center;}
+  .x-right{text-align:right;}
+  .x-bold{font-weight:700;}
+  .x-up{text-transform:uppercase; letter-spacing:.02em;}
+  .x-mt{margin-top:18px;}
+  .x-mb{margin-bottom:10px;}
+  `
+
+  return `
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <title>Contrato de arrendamiento</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>${css}</style>
+</head>
+<body>
+${htmlLines.join("\n")}
+</body>
+</html>`
+}
+
+/** Construye el HTML final descargable a partir del estado del formulario. */
+export function buildContractHtml(contractData: ContractData): string {
+  const values = buildValuesForExport(contractData)
+  const template = getContractTemplate()
+  return renderTemplateToCleanHtml(template, values)
 }

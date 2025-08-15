@@ -1,19 +1,23 @@
+// src/features/lease-wizard/ui/ContractForm.tsx
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent } from "@/components/ui/card"
-import { ChevronLeft, ChevronRight } from "lucide-react"
+import { ChevronLeft, ChevronRight, Download } from "lucide-react"
 import Link from "next/link"
 
-import { ContractData, Question } from "@/entities/contract/model/type"
+// Tipos y preguntas
+import { ContractData, Question } from "@/entities/contract"
 import { questions as baseQuestions } from "@/features/lease-wizard/model/contractQuestions"
-import { FormField } from "../../../shared/ui/FormField"
-import { ContractPreview } from "../../lease-preview/ui/ContractPreview"
+
+// UI
+import { FormField } from "@/shared/ui/FormField"
+import { ContractPreview } from "@/features/lease-preview/ui/ContractPreview"
 import { ProgressBar } from "@/shared/ui/ProgressBar"
 
-// ---------------- Utils ----------------
+// ---------------- Utils (dinámica de co-arrendatarios) ----------------
 const toInt = (v: string, d = 1) => {
   const n = parseInt(v, 10)
   return Number.isFinite(n) ? n : d
@@ -62,14 +66,14 @@ function useRuntimeQuestions(data: ContractData) {
     const idx = cloned.findIndex(q => q.id === "numTenants")
     if (idx === -1) return cloned
 
-    const n = Math.max(1, toInt(data.numTenants || "1"))
+    const n = Math.max(1, toInt(String(data.numTenants || "1")))
     const inserts: Question[] = []
     if (n >= 2) inserts.push(...makeCoTenantQuestions(2))
     if (n >= 3) inserts.push(...makeCoTenantQuestions(3))
 
     return [...cloned.slice(0, idx + 1), ...inserts, ...cloned.slice(idx + 1)]
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data.numTenants]) // << quitar baseQuestions del array para evitar el warning
+    // Nota: NO pongas baseQuestions en deps o verás el warning de react-hooks/exhaustive-deps
+  }, [data.numTenants])
 }
 
 // ---------------- Estado inicial ----------------
@@ -80,11 +84,9 @@ const initialContractData: ContractData = {
   propertyDescription: "",
   furnished: "",
   propertyReference: "",
-
   // Duración / Fechas
   contractDuration: "",
   availabilityDate: "",
-
   // Económico
   monthlyRent: "",
   paymentMethod: "",
@@ -95,11 +97,9 @@ const initialContractData: ContractData = {
   additionalDeposit: "",
   hasGuarantors: "",
   petsAllowed: "",
-
   // Encabezado
   contractLocation: "",
   contractDate: "",
-
   // Arrendador
   numLandlords: "",
   landlordType: "",
@@ -109,24 +109,23 @@ const initialContractData: ContractData = {
   landlordAddress: "",
   landlordSigner: "",
   landlordEmail: "",
-
   // Arrendatarios
-  numTenants: "1",
+  numTenants: "1", // inicia en 1
   tenantType: "",
   tenantName: "",
   tenantIdType: "",
   tenantId: "",
   tenantSigner: "",
   tenantEmail: "",
-
-  // Co-arrendatarios opcionales
+  // Co-arrendatarios (solo inicializa los string simples si quieres)
   coTenant2Name: "",
-  coTenant2Type: "fisica",
-  coTenant2IdType: "dni",
+  // ❌ NO inicializar union types con "" (dejalos ausentes)
+  // coTenant2Type: "",
+  // coTenant2IdType: "",
   coTenant2Id: "",
   coTenant3Name: "",
-  coTenant3Type: "fisica",
-  coTenant3IdType: "dni",
+  // coTenant3Type: "",
+  // coTenant3IdType: "",
   coTenant3Id: "",
 }
 
@@ -134,62 +133,59 @@ export default function ContractForm() {
   const [currentStep, setCurrentStep] = useState(0)
   const [contractData, setContractData] = useState<ContractData>(initialContractData)
 
-  const runtimeQuestions = useRuntimeQuestions(contractData)
+  // 🔀 Preguntas calculadas en runtime según numTenants
+  const questions = useRuntimeQuestions(contractData)
 
-  // Ajustar índice si cambia la cantidad de pasos
+  // Asegura que currentStep siempre esté dentro de rango cuando cambie la longitud
   useEffect(() => {
-    if (currentStep > runtimeQuestions.length - 1) {
-      setCurrentStep(runtimeQuestions.length - 1)
+    if (currentStep >= questions.length) {
+      setCurrentStep(Math.max(0, questions.length - 1))
     }
-  }, [runtimeQuestions.length, currentStep])
+  }, [questions.length, currentStep])
 
-  // Limpiar co-arrendatarios al bajar el número
-  useEffect(() => {
-    const n = Math.max(1, toInt(contractData.numTenants || "1"))
-    setContractData(prev => {
-      const next = { ...prev }
-      let changed = false
-      if (n < 2) {
-        if (next.coTenant2Name || next.coTenant2Id) changed = true
-        next.coTenant2Name = ""
-        next.coTenant2Type = "fisica"
-        next.coTenant2IdType = "dni"
-        next.coTenant2Id = ""
-      }
-      if (n < 3) {
-        if (next.coTenant3Name || next.coTenant3Id) changed = true
-        next.coTenant3Name = ""
-        next.coTenant3Type = "fisica"
-        next.coTenant3IdType = "dni"
-        next.coTenant3Id = ""
-      }
-      return changed ? next : prev
-    })
-  }, [contractData.numTenants])
-
-  const currentQuestion = runtimeQuestions[currentStep]
+  const currentQuestion = questions[currentStep]
+  const isLastStep = currentStep === questions.length - 1
 
   const handleInputChange = (value: string) => {
-    setContractData(prev => ({
+    setContractData((prev) => ({
       ...prev,
       [currentQuestion.id]: value,
     }))
   }
 
   const handleNext = () => {
-    if (currentStep < runtimeQuestions.length - 1) {
-      setCurrentStep(currentStep + 1)
-    }
+    if (currentStep < questions.length - 1) setCurrentStep(currentStep + 1)
   }
 
   const handlePrevious = () => {
-    if (currentStep > 0) {
-      setCurrentStep(currentStep - 1)
-    }
+    if (currentStep > 0) setCurrentStep(currentStep - 1)
   }
 
-  const handleExportPDF = () => {
-    alert("Funcionalidad de exportación a PDF en desarrollo")
+  // 2) PDF vía /api/pdf
+  const [isDownloading, setIsDownloading] = useState(false)
+  const handleDownload = async () => {
+    try {
+      setIsDownloading(true)
+      const res = await fetch("/api/pdf", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contractData }),
+      })
+      if (!res.ok) throw new Error("PDF generation failed")
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = "contrato-arrendamiento.pdf"
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      URL.revokeObjectURL(url)
+    } catch {
+      alert("No se pudo generar el PDF.")
+    } finally {
+      setIsDownloading(false)
+    }
   }
 
   return (
@@ -214,7 +210,8 @@ export default function ContractForm() {
                     <div className="mt-2">
                       <FormField
                         question={currentQuestion}
-                        value={contractData[currentQuestion.id] as string}
+                        // Siempre pasar string para evitar TS2322
+                        value={String(contractData[currentQuestion.id as keyof ContractData] ?? "")}
                         onChange={handleInputChange}
                       />
                     </div>
@@ -232,13 +229,18 @@ export default function ContractForm() {
                       <span>Anterior</span>
                     </Button>
 
-                    {currentStep === runtimeQuestions.length - 1 ? (
-                      <Button
-                        onClick={handleExportPDF}
-                        className="bg-cyan-500 hover:bg-cyan-600 text-white"
-                      >
-                        Exportar a PDF
-                      </Button>
+                    {isLastStep ? (
+                      <div className="flex items-center gap-2">
+                        <Button
+                          onClick={handleDownload}
+                          disabled={isDownloading}
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-2"
+                          title="Descargar documento"
+                        >
+                          <Download className="h-4 w-4" />
+                          {isDownloading ? "Generando..." : "Descargar"}
+                        </Button>
+                      </div>
                     ) : (
                       <Button
                         onClick={handleNext}
@@ -269,7 +271,7 @@ export default function ContractForm() {
           <div className="col-span-12 lg:col-span-6">
             <Card className="bg-white shadow-sm">
               <CardContent className="p-6">
-                <ContractPreview
+                <ContractPreview 
                   contractData={contractData}
                   currentFieldId={currentQuestion.id}
                 />
@@ -279,9 +281,9 @@ export default function ContractForm() {
 
           {/* Columna Derecha - Barra de Progreso */}
           <div className="col-span-12 lg:col-span-2">
-            <ProgressBar
+            <ProgressBar 
               currentStep={currentStep}
-              totalSteps={runtimeQuestions.length}
+              totalSteps={questions.length}
             />
           </div>
         </div>
@@ -289,3 +291,4 @@ export default function ContractForm() {
     </div>
   )
 }
+  
