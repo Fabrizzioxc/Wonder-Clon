@@ -32,9 +32,8 @@
 
 ## 📸 Demo rápida
 
-> **Idea de demo**: mientras escribes en el wizard, la vista previa inserta el texto en tiempo real, resalta el párrafo afectado y hace scroll automático (ej.: “Amueblado: Sí/No” → “CUARTA BIS. MOBILIARIO”).
 >
-> *(Opcional: añade un GIF/MP4 aquí)*
+![Vista previa del wizard](./public/img/preview_md.png)
 
 ---
 
