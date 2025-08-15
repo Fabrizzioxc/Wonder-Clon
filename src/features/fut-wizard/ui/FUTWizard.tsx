@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download } from "lucide-react";
 
 import { FUTFormField } from "./FUTFormField";
 import { FUTPreview } from "@/features/fut-preview/ui/FUTPreview";
@@ -16,11 +16,13 @@ import { futQuestions } from "@/features/fut-wizard/model/futQuestions";
 
 export function FUTWizard() {
   const [data, setData] = useState<FUTData>(initialFUTData);
+  const [step, setStep] = useState(0);
+  const [downloading, setDownloading] = useState(false);
+
   const visibleQuestions = useMemo(
     () => futQuestions.filter((q) => (q.condition ? q.condition(data) : true)),
     [data]
   );
-  const [step, setStep] = useState(0);
 
   const q = visibleQuestions[step];
   const progress = Math.round(((step + 1) / visibleQuestions.length) * 100);
@@ -28,6 +30,31 @@ export function FUTWizard() {
   const handleChange = (v: string) => {
     setData((prev) => ({ ...prev, [q.id]: v } as FUTData));
   };
+
+  async function handleDownload() {
+    try {
+      setDownloading(true);
+      const res = await fetch("/api/fut/pdf", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ data }),
+      });
+      if (!res.ok) throw new Error("PDF generation failed");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "fut.pdf";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      alert("No se pudo generar el PDF.");
+    } finally {
+      setDownloading(false);
+    }
+  }
 
   return (
     <div className="grid grid-cols-12 gap-6">
@@ -59,7 +86,14 @@ export function FUTWizard() {
                 </Button>
 
                 {step === visibleQuestions.length - 1 ? (
-                  <Button className="bg-cyan-500 hover:bg-cyan-600 text-white">Exportar a PDF</Button>
+                  <Button
+                    onClick={handleDownload}
+                    disabled={downloading}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-2"
+                  >
+                    <Download className="h-4 w-4" />
+                    {downloading ? "Generando..." : "Descargar PDF"}
+                  </Button>
                 ) : (
                   <Button
                     onClick={() => setStep((s) => Math.min(visibleQuestions.length - 1, s + 1))}
