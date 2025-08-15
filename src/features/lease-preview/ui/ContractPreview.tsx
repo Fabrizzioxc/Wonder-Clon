@@ -1,3 +1,4 @@
+// src/features/lease-preview/ui/ContractPreview.tsx
 "use client"
 
 import React, { useEffect, useMemo, useRef } from "react"
@@ -96,13 +97,21 @@ function getAnchorKey(currentFieldId: string) {
   return SCROLL_ANCHORS[currentFieldId] || currentFieldId
 }
 
-// --------------- Template ---------------
+/* ============================================================
+   1) TEMPLATE con directivas de estilo por línea
+   - [[TITLE]]   → título centrado, bold, uppercase
+   - [[RIGHT]]   → alineado a la derecha
+   - [[CENTER]]  → centrado, bold, uppercase
+   - [[CLAUSE]]  → encabezado de cláusula (mt + bold + uppercase)
+   Estas directivas sólo afectan al estilo de la línea, el texto sigue
+   renderizándose con tokens {{...}} como antes.
+   ============================================================ */
 function getContractTemplate(): string {
-  return `CONTRATO DE ARRENDAMIENTO DE VIVIENDA
+  return `[[TITLE]]CONTRATO DE ARRENDAMIENTO DE VIVIENDA
 
-En {{contractLocation}}, a {{contractDate}}
+[[RIGHT]]En {{contractLocation}}, a {{contractDate}}
 
-REUNIDOS
+[[CENTER]]REUNIDOS
 
 De una parte,
 {{BLOQUE_PARTE_ARRENDADOR}}
@@ -113,7 +122,7 @@ Y de otra parte,
 
 Y que, a continuación, serán referidas, individualmente como la "Parte" y, de forma conjunta, como las "Partes". Las Partes, en la calidad con la que actúan, y reconociéndose capacidad jurídica para contratar y obligarse, y en especial para el otorgamiento del presente CONTRATO DE ARRENDAMIENTO DE VIVIENDA. En adelante, el "Contrato".
 
-EXPONEN
+[[CENTER]]EXPONEN
 
 I. Que el Arrendador es propietario de la vivienda ubicada en: {{propertyAddress}}, con la siguiente Referencia Catastral: {{propertyReference}}. La vivienda cuenta con {{propertySize}} metros cuadrados de superficie, y presenta las siguientes características:
 
@@ -127,9 +136,9 @@ II. Que el Arrendador ha exhibido una copia del Certificado de Eficiencia Energ�
 
 III. Que el Arrendatario desea arrendar la Vivienda para su uso personal de vivienda habitual, y el Arrendador está interesado en arrendársela, así convienen pactar, de forma expresa y detallada, la oferta y aceptación en arrendamiento de la misma, acordando expresamente otorgar el presente contrato de arrendamiento de vivienda que se rige por las siguientes
 
-CLÁUSULAS
+[[CENTER]]CLÁUSULAS
 
-PRIMERA. OBJETO
+[[CLAUSE]]PRIMERA. OBJETO
 
 El presente Contrato tiene por objeto la constitución y regulación del arrendamiento de la Vivienda entre el Arrendador y los Arrendatarios, de acuerdo con las condiciones pactadas en este Contrato.
 
@@ -137,11 +146,11 @@ El/Los Arrendatario(s) utilizará(n) la Vivienda exclusivamente como vivienda ha
 
 La Vivienda se pondrá a disposición del/los Arrendatario(s) con la entrega de llaves, recibiendo la Vivienda en un estado adecuado al fin al que se destina y con conocimiento previo de las características de la misma, especialmente su estado de uso y conservación.
 
-SEGUNDA. DURACIÓN Y PRÓRROGAS
+[[CLAUSE]]SEGUNDA. DURACIÓN Y PRÓRROGAS
 
 El arrendamiento se pacta por el plazo siguiente: {{contractDuration}}, a contar desde el siguiente día: {{availabilityDate}}.
 
-TERCERA. LA RENTA Y SU ACTUALIZACIÓN
+[[CLAUSE]]TERCERA. LA RENTA Y SU ACTUALIZACIÓN
 
 La renta pactada por las Partes es de {{monthlyRent}} mensuales que el/los Arrendatario(s) pagará(n) al Arrendador cada mes, anticipadamente.
 
@@ -151,27 +160,27 @@ Entidad bancaria: {{bankName}}
 IBAN identificador de la cuenta: {{bankIban}}
 Titular de la cuenta: {{accountHolder}}
 
-CUARTA. GASTOS Y SUMINISTROS
+[[CLAUSE]]CUARTA. GASTOS GENERALES (SERVICIOS Y SUMINISTROS DE LA VIVIENDA)
 
 {{BLOQUE_SUMINISTROS}}
 
-CUARTA BIS. MOBILIARIO E INVENTARIO
+[[CLAUSE]]CUARTA BIS. MOBILIARIO E INVENTARIO
 
 {{CLAUSULA_MOBILIARIO}}
 
-QUINTA. MASCOTAS
+[[CLAUSE]]QUINTA. MASCOTAS
 
 {{BLOQUE_MASCOTAS}}
 
-SEXTA. DEPÓSITO ADICIONAL
+[[CLAUSE]]SEXTA. DEPÓSITO ADICIONAL
 
 {{BLOQUE_DEPOSITO_ADICIONAL}}
 
-SÉPTIMA. AVALISTAS / FIADORES
+[[CLAUSE]]SÉPTIMA. AVALISTAS / FIADORES
 
 {{BLOQUE_AVALISTAS}}
 
-OCTAVA. PLURALIDAD DE ARRENDATARIOS Y SOLIDARIDAD
+[[CLAUSE]]OCTAVA. PLURALIDAD DE ARRENDATARIOS Y SOLIDARIDAD
 
 {{CLAUSULA_SOLIDARIDAD}}`
 }
@@ -331,6 +340,36 @@ interface ContractPreviewProps {
   currentFieldId: keyof ContractData
 }
 
+/* ============================================================
+   2) Parser de directivas por línea → clases Tailwind
+   ============================================================ */
+function parseLineDirectives(raw: string) {
+  let text = raw
+  const classes: string[] = []
+
+  if (text.startsWith("[[TITLE]]")) {
+    text = text.replace("[[TITLE]]", "")
+    classes.push(
+      "text-center", "font-bold", "uppercase", "tracking-wide",
+      "text-[15px]", "mt-1", "mb-2"
+    )
+  }
+  if (text.startsWith("[[RIGHT]]")) {
+    text = text.replace("[[RIGHT]]", "")
+    classes.push("text-right")
+  }
+  if (text.startsWith("[[CENTER]]")) {
+    text = text.replace("[[CENTER]]", "")
+    classes.push("text-center", "font-bold", "uppercase", "mt-4", "mb-2")
+  }
+  if (text.startsWith("[[CLAUSE]]")) {
+    text = text.replace("[[CLAUSE]]", "")
+    classes.push("mt-6", "mb-1", "font-bold", "uppercase")
+  }
+
+  return { text, className: classes.join(" ") }
+}
+
 // ------------- Component -------------
 export function ContractPreview({ contractData, currentFieldId }: ContractPreviewProps) {
   const previewRef = useRef<HTMLDivElement>(null)
@@ -358,26 +397,24 @@ export function ContractPreview({ contractData, currentFieldId }: ContractPrevie
   const template = useMemo(() => getContractTemplate(), [])
 
   // Ancla para scroll/resaltado
-  const anchorKey = useMemo(
-    () => getAnchorKey(String(currentFieldId)),
-    [currentFieldId]
-  )
+  const anchorKey = useMemo(() => getAnchorKey(String(currentFieldId)), [currentFieldId])
 
-  // Render 1-pass con placeholders
+  // Render 1-pass con placeholders y directivas
   const processed = useMemo(() => {
     const lines = template.split("\n")
     let globalFieldCounter = 0
 
     return (
       <div>
-        {lines.map((line, lineIndex) => {
+        {lines.map((rawLine, lineIndex) => {
+          const { text: line, className } = parseLineDirectives(rawLine)
           const elements: React.ReactElement[] = []
           let lastIndex = 0
           const placeholderRegex = /\{\{(\w+)\}\}/g
           let match: RegExpExecArray | null
 
           while ((match = placeholderRegex.exec(line)) !== null) {
-            const key = match[1] // string
+            const key = match[1]
             const placeholder = match[0]
             const start = match.index
             const end = start + placeholder.length
@@ -408,7 +445,11 @@ export function ContractPreview({ contractData, currentFieldId }: ContractPrevie
             elements.push(<span key={`t-${lineIndex}-${lastIndex}`}>{line.slice(lastIndex)}</span>)
           }
 
-          return <div key={`line-${lineIndex}`}>{elements.length ? elements : line}</div>
+          return (
+            <div key={`line-${lineIndex}`} className={className}>
+              {elements.length ? elements : line}
+            </div>
+          )
         })}
       </div>
     )
@@ -433,7 +474,7 @@ export function ContractPreview({ contractData, currentFieldId }: ContractPrevie
   return (
     <div
       ref={previewRef}
-      className="bg-gray-50 rounded-lg p-6 text-sm leading-relaxed font-mono select-none max-h-[600px] overflow-y-auto"
+      className="bg-gray-50 rounded-lg p-8 text-[15px] leading-7 font-serif select-none max-h-[600px] overflow-y-auto"
       style={{ userSelect: "none" }}
     >
       <div className="whitespace-pre-line">{processed}</div>
