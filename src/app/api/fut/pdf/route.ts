@@ -1,122 +1,93 @@
-// src/app/api/fut/pdf/route.ts
-import { NextResponse, type NextRequest } from "next/server";
-import puppeteer from "puppeteer-core";
-import chromium from "@sparticuz/chromium";
-import { buildFUTHtml } from "@/features/fut-preview/lib/buildFUTHtml";
-import type { FUTData } from "@/entities/fut/model/type";
+import { NextRequest } from "next/server"
+import { buildFUTHtml } from "@/features/fut-preview/lib/buildFUTHtml"
+import type { FUTData } from "@/entities/fut/model/type"
 
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
+export const runtime = "nodejs"
+export const dynamic = "force-dynamic"
 
-type ChromiumLike = {
-  executablePath: () => Promise<string | null>;
-  args: string[];
-};
-const chrome = chromium as unknown as ChromiumLike;
-
-/** Copia segura: Uint8Array -> ArrayBuffer (evita SharedArrayBuffer en el tipo) */
-function toArrayBuffer(u8: Uint8Array): ArrayBuffer {
-  const ab = new ArrayBuffer(u8.byteLength);
-  new Uint8Array(ab).set(u8);
-  return ab;
-}
-
-async function resolveExecutablePath(): Promise<string | undefined> {
-  // 0) Variable de entorno (si quieres forzar la ruta manualmente)
-  if (process.env.CHROME_PATH) return process.env.CHROME_PATH;
-
-  // 1) Intenta @sparticuz/chromium SIEMPRE (en Vercel y en local)
-  try {
-    const p = await chrome.executablePath();
-    if (p) return p;
-  } catch {
-    // ignore
-  }
-
-  // 2) En local: intenta usar puppeteer “full” si está instalado
-  try {
-    const puppeteerFull: typeof import("puppeteer") = await import("puppeteer");
-    const p = puppeteerFull.executablePath();
-    if (p) return p;
-  } catch {
-    // ignore
-  }
-
-  // 3) Rutas conocidas de Chrome por SO
-  const candidates = [
-    "C:\\\\Program Files\\\\Google\\\\Chrome\\\\Application\\\\chrome.exe",
-    "C:\\\\Program Files (x86)\\\\Google\\\\Chrome\\\\Application\\\\chrome.exe",
-    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-    "/usr/bin/google-chrome",
-    "/usr/bin/chromium-browser",
-    "/usr/bin/chromium",
-  ];
-
-  for (const c of candidates) {
-    try {
-      const { access } = await import("node:fs/promises");
-      await access(c);
-      return c;
-    } catch {
-      // try next
-    }
-  }
-
-  return undefined;
-}
+// Soporta puppeteer "full" y puppeteer-core sin usar 'any'
+type AnyBrowser = import("puppeteer-core").Browser | import("puppeteer").Browser
 
 export async function POST(req: NextRequest) {
-  try {
-    const { data } = (await req.json()) as { data: FUTData };
-    const html = buildFUTHtml(data);
+  let browser: AnyBrowser | null = null
 
-    const executablePath = await resolveExecutablePath();
-    if (!executablePath) {
-      // Expón un error claro para que no sea un 500 “ciego”
-      return NextResponse.json(
-        {
-          error:
-            "No se encontró un navegador para generar el PDF. Instala Google Chrome o añade 'puppeteer' (full) en dev, o configura CHROME_PATH.",
-          hints: [
-            "npm i -D puppeteer   # en local",
-            "o instala Google Chrome y reinicia 'npm run dev'",
-            "o exporta CHROME_PATH con la ruta al binario de Chrome",
-          ],
-        },
-        { status: 500 }
-      );
+  try {
+    const { data } = (await req.json()) as { data: FUTData }
+    const html = buildFUTHtml(data)
+
+    const isProd = process.env.NODE_ENV === "production" || process.env.VERCEL === "1"
+
+    if (isProd) {
+      // ✅ Producción (Vercel): puppeteer-core + @sparticuz/chromium
+      const { default: chromium } = await import("@sparticuz/chromium")
+      const pptr = await import("puppeteer-core")
+
+      browser = await pptr.launch({
+        args: chromium.args,
+        executablePath: await chromium.executablePath(),
+        headless: true,
+      })
+    } else {
+      // ✅ Desarrollo local (Windows/Mac/Linux)
+      try {
+        // 1) Usa puppeteer "full" con Chromium embebido
+        const pptr = await import("puppeteer")
+        browser = await pptr.launch({
+          executablePath: pptr.executablePath(),
+          headless: true,
+        })
+      } catch {
+        // 2) Fallback: puppeteer-core + Chrome del sistema
+        const pptrCore = await import("puppeteer-core")
+        const executablePath =
+          process.env.CHROME_PATH ||
+          "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe" // ajusta si está en otra ruta
+
+        browser = await pptrCore.launch({
+          executablePath,
+          headless: true,
+        })
+      }
     }
 
-    const browser = await puppeteer.launch({
-      args: chrome.args ?? [],
-      executablePath, // ahora garantizado
-      headless: true,
-      defaultViewport: { width: 794, height: 1123, deviceScaleFactor: 2 }, // A4 @ ~150DPI
-    });
+    if (!browser) {
+      throw new Error("No se pudo lanzar el navegador")
+    }
 
-    const page = await browser.newPage();
-    await page.setContent(html, { waitUntil: "networkidle0" });
+    const page = await browser.newPage()
+    // Igual que en el contrato: evita 'networkidle0' que a veces cierra target en Win
+    await page.setContent(html, { waitUntil: "load" })
+    await page.emulateMediaType("screen")
 
-    // PDF como Buffer (Uint8Array)
-    const pdfBuffer = await page.pdf({
+    const pdfBytes = await page.pdf({
       format: "A4",
       printBackground: true,
-      margin: { top: "15mm", right: "15mm", bottom: "15mm", left: "15mm" },
-    });
+      margin: { top: "20mm", bottom: "20mm", left: "15mm", right: "15mm" },
+    })
 
-    await browser.close();
+    // Stream de respuesta (evita problemas con ArrayBuffer/SharedArrayBuffer)
+    const stream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(new Uint8Array(pdfBytes))
+        controller.close()
+      },
+    })
 
-    // Convierte a ArrayBuffer puro y responde (evita SharedArrayBuffer en tipos)
-    const ab = toArrayBuffer(pdfBuffer);
-    return new NextResponse(ab, {
+    return new Response(stream, {
+      status: 200,
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": 'attachment; filename="fut.pdf"',
         "Cache-Control": "no-store",
       },
-    });
+    })
   } catch (err) {
-    console.error("FUT PDF error:", err);
-    return NextResponse.json({ error: "No se pudo generar el PDF" }, { status: 500 });
+    console.error("FUT PDF error:", err)
+    return new Response("Failed to generate PDF", { status: 500 })
+  } finally {
+    // ✅ TS2454 resuelto: siempre existe el símbolo y chequeamos null
+    if (browser) {
+      try { await browser.close() } catch { /* ignore */ }
+    }
   }
 }
