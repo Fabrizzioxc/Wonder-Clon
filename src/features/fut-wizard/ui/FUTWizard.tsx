@@ -1,4 +1,3 @@
-// src/features/fut-wizard/ui/FUTWizard.tsx
 "use client";
 
 import { useMemo, useState } from "react";
