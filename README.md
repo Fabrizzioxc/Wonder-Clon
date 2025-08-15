@@ -119,19 +119,7 @@ src/
     lib/...
 ```
 
-## Flujo de datos (cómo se edita “en vivo”)
-
-```
-Form (feature) → ContractData (estado)
-  → normalizers (fechas, €) + blocks (cláusulas cond.) [entities]
-  → values map { TOKEN: texto }
-  → template con {{TOKENS}} [document-engine]
-  → render a spans con id únicos
-  → resaltado + autoscroll al bloque que cambió
-
-```
-
-## Flujo de datos (cómo se edita “en vivo”)
+## 🔄 Flujo de datos (cómo se edita “en vivo”)
 
 entities/contract/lib/mapping.ts define el mapa:
 
@@ -144,3 +132,85 @@ export const SCROLL_ANCHORS = {
 export const getAnchorKey = (id: string) => SCROLL_ANCHORS[id] || id
 
 ```
+
+
+1. **Estado controlado**: `ContractForm.tsx` gestiona `contractData` (lo que escribe el usuario) y `currentFieldId` (paso actual).
+2. **Normalización**: helpers puros (`formatFechaES`, `formatEuros`, `labelPago`, `fallback`) preparan los datos.
+3. **Bloques condicionales**: `buildBlocks(data)` produce **párrafos/cláusulas completas** según opciones (amueblado, suministros, pluralidad, representante, DNI/NIE/Pasaporte…).
+4. **Motor de plantillas**: un template con **tokens** `{{TOKEN}}` se sustituye por texto. En el preview, cada token se imprime como `<span>` con `id` único para permitir resaltado y scroll preciso.
+5. **Autoscroll inteligente**: `SCROLL_ANCHORS` mapea `campo → token`. Ej.: `furnished → CLAUSULA_MOBILIARIO`. Al cambiar un radio/select, el preview se desplaza al bloque correcto.
+
+---
+
+## 🧱 Tokens y bloques (conceptos clave)
+
+- **Tokens `{{...}}`**: placeholders semánticos en el template (p. ej. `{{CLAUSULA_MOBILIARIO}}`, `{{BLOQUE_SUMINISTROS}}`).  
+  Si falta dato, se muestra `__________`.
+- **Bloques/estrategias**: funciones puras que devuelven el texto legal correcto según el estado (Sí/No, tipo de persona, nº de arrendatarios, etc.).
+- **Mapa de anclas**: tabla `campo→token` para resaltar y scrollear al párrafo que cambia.
+
+### Ejemplos
+
+**Amueblado (Sí/No)**
+- Token: `{{CLAUSULA_MOBILIARIO}}`
+- Sí → inventario (Anexo I), conservación, cargo a fianza/depósito si procede.  
+- No → mobiliario propio, retiro al final, estado de devolución.
+
+**Pluralidad de arrendatarios (1/2/3)**
+- `numTenants` controla:
+  - Inputs dinámicos para co-arrendatario 2/3 en el wizard.
+  - Listado en “REUNIDOS” (`{{BLOQUE_COTENANTS}}`).
+  - **Cláusula de solidaridad** (`{{CLAUSULA_SOLIDARIDAD}}`): responsabilidad solidaria y notificaciones válidas a cualquiera.
+
+**Tipos de persona y documento**
+- `{{BLOQUE_PARTE_ARRENDADOR}}` / `{{BLOQUE_PARTE_ARRENDATARIO}}`:
+  - Jurídica → “La sociedad X, identificada con NIF… con domicilio social…”
+  - Física → “Nombre, identificado con DNI/NIE/Pasaporte… con domicilio en…”
+  - Con representante → se añade coletilla de poder suficiente.
+
+---
+
+## 🔒 Seguridad y calidad
+
+- Sin `dangerouslySetInnerHTML`: menor riesgo de XSS.
+- Reemplazo **token→valor** (no `replaceAll` del valor): evita que, por ejemplo, todos los “2” se resalten.
+- TypeScript estricto (sin `any`) y ESLint limpio.
+- Funciones de dominio **puras** → unit tests simples.
+
+---
+
+## ▶️ Scripts
+
+```bash
+# instalar dependencias
+npm install
+
+# desarrollo local
+npm run dev
+
+# linter
+npm run lint
+
+# build de producción
+npm run build
+```
+
+
+## tsconfig.json (paths):
+
+```bash
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": { "@/*": ["src/*"] }
+  }
+}
+
+```
+
+## 🧪 Tests (sugeridos)
+
+- normalizers.spec.ts (fechas, importes)
+- blocks.spec.ts (amueblado, pluralidad, tipos de doc/persona)
+- renderTemplate.spec.ts (reemplazo de tokens; guiones por defecto)
+
