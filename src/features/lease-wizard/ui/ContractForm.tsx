@@ -7,11 +7,11 @@ import { Card, CardContent } from "@/components/ui/card"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import Link from "next/link"
 
-import { ContractData, Question } from "@/types/type"
-import { questions as baseQuestions } from "@/types/contractQuestions"
-import { FormField } from "./FormField"
-import { ContractPreview } from "./ContractPreview"
-import { ProgressBar } from "./ProgressBar"
+import { ContractData, Question } from "@/entities/contract/model/type"
+import { questions as baseQuestions } from "@/features/lease-wizard/model/contractQuestions"
+import { FormField } from "../../../shared/ui/FormField"
+import { ContractPreview } from "../../lease-preview/ui/ContractPreview"
+import { ProgressBar } from "@/shared/ui/ProgressBar"
 
 // ---------------- Utils ----------------
 const toInt = (v: string, d = 1) => {

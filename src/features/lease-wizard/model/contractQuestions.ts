@@ -1,4 +1,4 @@
-import { Question } from '@/types/type'
+import { Question } from '@/entities/contract/model/type'
 
 export const questions: Question[] = [
   {

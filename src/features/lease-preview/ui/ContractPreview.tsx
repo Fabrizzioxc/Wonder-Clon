@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useEffect, useMemo, useRef } from "react"
-import { ContractData } from "@/types/type"
+import { ContractData } from "@/entities/contract/model/type"
 
 // ---------------- Helpers ----------------
 const MESES = [
