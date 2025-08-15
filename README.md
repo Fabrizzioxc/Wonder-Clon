@@ -5,10 +5,7 @@
     Generador de <b>contratos de arrendamiento</b> con edición en vivo, cláusulas condicionales y arquitectura limpia.
     <br />
     <a href="https://wonder-clon.vercel.app">Ver demo</a>
-    ·
-    <a href="#-arquitectura">Arquitectura</a>
-    ·
-    <a href="#-flujo-de-datos-en-vivo">Cómo funciona</a>
+    
   </p>
   <p align="center">
     <img src="https://img.shields.io/badge/Next.js-App%20Router-000000?logo=nextdotjs" />
@@ -60,7 +57,6 @@
 - [Calidad y Seguridad](#-calidad-y-seguridad)
 - [Tests (sugeridos)](#-tests-sugeridos)
 - [Roadmap](#-roadmap)
-- [Elevator Pitch](#-elevator-pitch)
 
 ---
 
