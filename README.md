@@ -67,3 +67,84 @@
 ## 🧱 Arquitectura
 
 **Feature-Sliced Design (FSD) con capa de entidades** + separación de responsabilidades (Clean).
+
+```bash
+app/                 # rutas Next.js (App Router)
+features/            # casos de uso (wizard, preview, export)
+  └─ lease-wizard/   # formulario multipaso (estado/control)
+  └─ lease-preview/  # vista previa reactiva (render)
+entities/            # dominio "contrato" (reglas, tipos, bloques)
+  └─ contract/
+      model/         # tipos, esquemas
+      lib/           # normalizadores, mapping
+      templates/     # funciones que devuelven párrafos/cláusulas
+document-engine/     # motor genérico de plantillas con tokens {{...}}
+shared/              # UI y helpers reutilizables
+widgets/             # secciones UI grandes (Navbar/Footer/etc.)
+tests/               # unit/e2e (opcional)
+```
+
+## Dependencias entre capas
+
+- `Features` → depende de entities y shared
+- `entities` → puro dominio (no depende de React)
+- `document-engine` → infraestructura genérica (no conoce el dominio)
+- `app` → compone páginas a partir de features
+
+
+## 📁 Estructura de carpetas
+
+```bash
+src/
+  app/
+    documentos/
+      arrendamiento/
+        contrato-arrendamiento-vivienda-habitual/
+          page.tsx
+  entities/
+    contract/
+      model/types.ts
+      lib/normalizers.ts
+      lib/mapping.ts
+      templates/blocks.ts
+      index.ts
+    document-engine/
+      lib/renderTemplate.ts
+      index.ts
+  features/
+    lease-wizard/
+      ui/ContractForm.tsx
+      model/questions.ts
+    lease-preview/
+      ui/ContractPreview.tsx
+  shared/
+    ui/FormField.tsx
+    ui/ProgressBar.tsx
+    lib/...
+```
+
+## Flujo de datos (cómo se edita “en vivo”)
+
+```
+Form (feature) → ContractData (estado)
+  → normalizers (fechas, €) + blocks (cláusulas cond.) [entities]
+  → values map { TOKEN: texto }
+  → template con {{TOKENS}} [document-engine]
+  → render a spans con id únicos
+  → resaltado + autoscroll al bloque que cambió
+
+```
+
+## Flujo de datos (cómo se edita “en vivo”)
+
+entities/contract/lib/mapping.ts define el mapa:
+
+```
+export const SCROLL_ANCHORS = {
+  furnished: "CLAUSULA_MOBILIARIO",
+  numTenants: "CLAUSULA_SOLIDARIDAD",
+  // ...otros mapeos...
+}
+export const getAnchorKey = (id: string) => SCROLL_ANCHORS[id] || id
+
+```
