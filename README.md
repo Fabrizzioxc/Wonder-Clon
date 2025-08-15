@@ -1,36 +1,69 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+<!-- PROJECT LOGO -->
+<p align="center">
+  <h1 align="center">🧩 Clon tipo Wonder.Legal — Wizard + Vista Previa Reactiva</h1>
+  <p align="center">
+    Generador de <b>contratos de arrendamiento</b> con edición en vivo, cláusulas condicionales y arquitectura limpia.
+    <br />
+    <a href="#-demo-rápida">Ver demo</a>
+    ·
+    <a href="#-arquitectura">Arquitectura</a>
+    ·
+    <a href="#-flujo-de-datos-en-vivo">Cómo funciona</a>
+  </p>
+  <p align="center">
+    <img src="https://img.shields.io/badge/Next.js-App%20Router-000000?logo=nextdotjs" />
+    <img src="https://img.shields.io/badge/TypeScript-Strict-3178C6?logo=typescript&logoColor=white" />
+    <img src="https://img.shields.io/badge/Tailwind-CSS-38BDF8?logo=tailwindcss&logoColor=white" />
+    <img src="https://img.shields.io/badge/shadcn-ui-000" />
+    <img src="https://img.shields.io/badge/Deployed%20on-Vercel-000000?logo=vercel" />
+    <img src="https://img.shields.io/badge/License-MIT-green" />
+  </p>
+</p>
 
-## Getting Started
+---
 
-First, run the development server:
+## ✨ Highlights
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- 🧠 **Arquitectura Feature-Sliced con capa de Entidades** (FSD + Clean)
+- 🧵 **Motor de plantillas** con **tokens** `{{...}}` (agnóstico del dominio)
+- ⚖️ **Bloques legales condicionales** (amueblado, suministros, pluralidad, representante, DNI/NIE/Pasaporte…)
+- ⚡ **Edición en vivo**: resaltado + autoscroll inteligente al párrafo que cambia
+- 🔒 **Sin `dangerouslySetInnerHTML`** (XSS-safe), reemplazo token→valor
+- 🧪 **Funciones puras** en dominio → tests simples
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 📸 Demo rápida
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+> **Idea de demo**: mientras escribes en el wizard, la vista previa inserta el texto en tiempo real, resalta el párrafo afectado y hace scroll automático (ej.: “Amueblado: Sí/No” → “CUARTA BIS. MOBILIARIO”).
+>
+> *(Opcional: añade un GIF/MP4 aquí)*
 
-## Learn More
+---
 
-To learn more about Next.js, take a look at the following resources:
+## 🧰 Stack
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- **Next.js (App Router) + React 18**
+- **TypeScript estricto** + **ESLint**
+- **TailwindCSS + shadcn/ui**
+- Deploy recomendado: **Vercel**
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
+## 🗺️ Tabla de contenidos
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- [Arquitectura](#-arquitectura)
+- [Estructura de carpetas](#-estructura-de-carpetas)
+- [Flujo de datos en vivo](#-flujo-de-datos-en-vivo)
+- [Tokens y Bloques](#-tokens-y-bloques)
+- [Scripts](#-scripts)
+- [Calidad y Seguridad](#-calidad-y-seguridad)
+- [Tests (sugeridos)](#-tests-sugeridos)
+- [Roadmap](#-roadmap)
+- [Elevator Pitch](#-elevator-pitch)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+
+## 🧱 Arquitectura
+
+**Feature-Sliced Design (FSD) con capa de entidades** + separación de responsabilidades (Clean).
